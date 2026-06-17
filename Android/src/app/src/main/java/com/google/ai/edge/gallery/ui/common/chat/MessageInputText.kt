@@ -123,7 +123,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.common.AudioClip
-import com.google.ai.edge.gallery.common.convertWavToMonoWithMaxSeconds
+import com.google.ai.edge.gallery.common.loadAudioClipFromUri
 import com.google.ai.edge.gallery.common.decodeSampledBitmapFromUri
 import com.google.ai.edge.gallery.common.rotateBitmap
 import com.google.ai.edge.gallery.data.MAX_AUDIO_CLIP_COUNT
@@ -559,7 +559,7 @@ fun MessageInputText(
                               horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                               Icon(Icons.Rounded.AudioFile, contentDescription = null)
-                              Text("Pick wav file")
+                              Text("Pick audio file")
                             }
                           },
                           enabled = enableRecordAudioClipMenuItems,
@@ -570,11 +570,9 @@ fun MessageInputText(
                             val intent =
                               Intent(Intent.ACTION_GET_CONTENT).apply {
                                 addCategory(Intent.CATEGORY_OPENABLE)
+                                // Accept any audio format; AudioConverter will transcode it to
+                                // the 16 kHz mono PCM the model expects.
                                 type = "audio/*"
-
-                                // Provide a list of more specific MIME types to filter for.
-                                val mimeTypes = arrayOf("audio/wav", "audio/x-wav")
-                                putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
 
                                 // Single select.
                                 putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
@@ -1005,7 +1003,7 @@ private fun handleAudioWavSelected(
   uri: Uri,
   onAudioSelected: (AudioClip) -> Unit,
 ) {
-  convertWavToMonoWithMaxSeconds(context = context, stereoUri = uri)?.let { audioClip ->
+  loadAudioClipFromUri(context = context, uri = uri)?.let { audioClip ->
     onAudioSelected(audioClip)
   }
 }
